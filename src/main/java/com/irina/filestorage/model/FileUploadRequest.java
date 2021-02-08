@@ -1,4 +1,4 @@
-package com.irina.filestorage.domain;
+package com.irina.filestorage.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

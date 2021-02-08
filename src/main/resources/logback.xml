@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT"
+              class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                %d{dd-MM-yyyy'T'HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            </Pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILESTORAGE_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>filestorage.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>filestorage.%d{dd-MM-yyyy}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{dd-MM-yyyy'T'HH:mm:ss.SSS'Z', UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_FILESTORAGE_LOG" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILESTORAGE_LOG"/>
+    </appender>
+
+    <root level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILESTORAGE_LOG"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+    <logger name="com.irina" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNC_FILESTORAGE_LOG"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+</configuration>
