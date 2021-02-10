@@ -6,6 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @AllArgsConstructor
-public class FileUploadRequest {
+public class CreateFileRequest {
     private MultipartFile file;
 }
