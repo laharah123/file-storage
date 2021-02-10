@@ -1,9 +1,8 @@
 package com.irina.filestorage.controller;
 
-import com.irina.filestorage.model.CreateFileRequest;
 import com.irina.filestorage.model.ErrorResponse;
-import com.irina.filestorage.model.validator.CreateFileValidator;
-import com.irina.filestorage.model.validator.ReplaceFileValidator;
+import com.irina.filestorage.model.UploadFileRequest;
+import com.irina.filestorage.model.validator.UploadFileValidator;
 import com.irina.filestorage.service.FileOperationsService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,31 +26,29 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Slf4j
 public class FileOperationsController {
-    private final CreateFileValidator createFileValidator;
-    private final ReplaceFileValidator replaceFileValidator;
+    private final UploadFileValidator uploadFileValidator;
     private final FileOperationsService fileOperationsService;
 
 
-    @InitBinder(value = "createFileValidator")
+    @InitBinder
     protected void initCreateFileBinder(final WebDataBinder binder) {
-        binder.setValidator(createFileValidator);
+        binder.setValidator(uploadFileValidator);
     }
 
-    @InitBinder(value = "replaceFileValidator")
-    protected void initReplaceFileBinder(final WebDataBinder binder) {
-        binder.setValidator(replaceFileValidator);
-    }
-
-    @PostMapping
-    public ResponseEntity createFile(@Valid CreateFileRequest createFileRequest,
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity uploadFile(@Valid UploadFileRequest uploadFileRequest,
                                      BindingResult result) throws IOException {
         if (result.hasErrors()) {
-            return buildErrorResponseEntity(createFileRequest.getFile().getOriginalFilename(),
+            return buildErrorResponseEntity(uploadFileRequest.getFile().getOriginalFilename(),
                     result);
         }
-        fileOperationsService.createFile(createFileRequest.getFile());
-        return ResponseEntity.created(URI.create(String.format("/files/%s",
-                createFileRequest.getFile().getOriginalFilename()))).build();
+        fileOperationsService.uploadFile(uploadFileRequest.getFile());
+        if (uploadFileRequest.getReplaceFile()) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.created(URI.create(String.format("/files/%s",
+                    uploadFileRequest.getFile().getOriginalFilename()))).build();
+        }
     }
 
     @GetMapping(value = "/{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -65,13 +62,6 @@ public class FileOperationsController {
         } catch (final FileNotFoundException fileNotFoundException) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    @PutMapping(value = "/{fileName}")
-    public ResponseEntity<Resource> replaceFile(@PathVariable("fileName") String fileName,
-                                                @Valid ReplaceFileValidator replaceFileValidator,
-                                                BindingResult result) {
-        return ResponseEntity.ok().build();
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponseEntity(final String fileName,

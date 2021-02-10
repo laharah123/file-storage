@@ -22,7 +22,7 @@ public class FileOperationsService {
 
     private final FileStorageProps fileStorageProps;
 
-    public void createFile(final MultipartFile multipartFile) throws IOException {
+    public void uploadFile(final MultipartFile multipartFile) throws IOException {
         final File file = new File(fileStorageProps.getBasePath(),
                 multipartFile.getOriginalFilename());
         multipartFile.transferTo(file);

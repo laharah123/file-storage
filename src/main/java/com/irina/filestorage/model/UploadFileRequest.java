@@ -5,7 +5,7 @@ import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
-@AllArgsConstructor
-public class CreateFileRequest {
+public class UploadFileRequest {
     private MultipartFile file;
+    private Boolean replaceFile = Boolean.FALSE;
 }
