@@ -1,6 +1,7 @@
 package com.irina.filestorage.controller;
 
 import com.irina.filestorage.model.ErrorResponse;
+import com.irina.filestorage.model.SizeResponse;
 import com.irina.filestorage.model.UploadFileRequest;
 import com.irina.filestorage.model.validator.UploadFileValidator;
 import com.irina.filestorage.service.FileOperationsService;
@@ -52,7 +53,7 @@ public class FileOperationsController {
     }
 
     @GetMapping(value = "/{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<Resource> getFile(@PathVariable("fileName") String fileName) throws MalformedURLException {
+    public ResponseEntity<Resource> getFile(@PathVariable("fileName") final String fileName) throws MalformedURLException {
         try {
             final Resource fileResource = fileOperationsService.downloadFile(fileName);
             return ResponseEntity.ok()
@@ -62,6 +63,21 @@ public class FileOperationsController {
         } catch (final FileNotFoundException fileNotFoundException) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @DeleteMapping(value = "/{fileName}")
+    public ResponseEntity<Void> deleteFile(@PathVariable("fileName") final String fileName) throws IOException {
+        final boolean deletedFile = fileOperationsService.deleteFile(fileName);
+        if (deletedFile) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping(value = "/size", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SizeResponse> getSizeOfStorage() throws IOException {
+        return ResponseEntity.ok(new SizeResponse(fileOperationsService.getSizeOfStorage()));
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponseEntity(final String fileName,
