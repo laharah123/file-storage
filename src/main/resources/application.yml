@@ -1,0 +1,13 @@
+filestorage:
+    file:
+        basePath: E:/programs/fileTests
+        uploadMaxSize: 1048576
+server:
+    servlet:
+        context-path: /filestorage
+spring:
+    servlet:
+        multipart:
+            enabled: true
+            maxFileSize: -1
+            maxRequestSize: -1
