@@ -10,9 +10,9 @@ import java.util.regex.PatternSyntaxException;
 
 @Component
 public class FileSearchValidator implements Validator {
-    private final static String INCORRECT_PAGE_SIZE = "Page size must be a positive integer number";
-    private final static String INCORRECT_PAGE_NUMBER = "Page number must be a positive integer number";
-    private final static String INVALID_SEARCH_PATTERN = "The search term must be a valid regex";
+    private static final String INCORRECT_PAGE_SIZE = "Page size %s is invalid. It must be a positive integer number";
+    private static final String INCORRECT_PAGE_NUMBER = "Page number %s is invalid. It must be a positive integer number";
+    private static final String INVALID_SEARCH_PATTERN = "The search term %s is not a valid regex";
 
     @Override
     public boolean supports(final Class<?> clazz) {
@@ -28,10 +28,10 @@ public class FileSearchValidator implements Validator {
 
     private void checkPageSizeAndNumber(final Integer pageSize, final Integer pageNumber, final Errors errors) {
         if (pageSize < 1) {
-            errors.reject(INCORRECT_PAGE_SIZE);
+            errors.reject(String.format(INCORRECT_PAGE_SIZE, pageSize));
         }
         if (pageNumber < 1) {
-            errors.reject(INCORRECT_PAGE_NUMBER);
+            errors.reject(String.format(INCORRECT_PAGE_NUMBER, pageNumber));
         }
     }
 
@@ -39,7 +39,7 @@ public class FileSearchValidator implements Validator {
         try {
             Pattern.compile(fileNameRegex);
         } catch (PatternSyntaxException exception) {
-            errors.reject(INVALID_SEARCH_PATTERN);
+            errors.reject(String.format(INVALID_SEARCH_PATTERN, fileNameRegex));
         }
     }
 }

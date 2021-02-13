@@ -14,11 +14,12 @@ import java.nio.file.Paths;
 @Component
 @AllArgsConstructor
 public class UploadFileValidator implements Validator {
-    private final static String FILENAME_HAS_INCORRECT_SIZE = "Filename should be between 1 and 64 characters";
-    private final static String FILENAME_CONTAINS_ILLEGAL_CHARACTERS = "Filename should contain only a-z, A-Z, 0-9, -, _";
-    private final static String FILE_TOO_LARGE = "File is too large. Maximum size allowed: %s MB";
-    private final static String FILE_ALREADY_EXISTS = "A file with the same name already exists";
-    private final static String FILE_NOT_FOUND = "No file with that name exists";
+    private static final String FILENAME_HAS_INCORRECT_SIZE = "Filename %s too long. It should be between 1 and 64 characters";
+    private static final String FILENAME_CONTAINS_ILLEGAL_CHARACTERS = "Filename %s contains illegal characters." +
+            " It should contain only a-z, A-Z, 0-9, -, _";
+    private static final String FILE_TOO_LARGE = "File %s is too large. Maximum size allowed: %s MB";
+    private static final String FILE_ALREADY_EXISTS = "A file with the same name (%s) already exists";
+    private static final String FILE_NOT_FOUND = "No file with that name (%s) exists";
 
     private final FileStorageProps fileStorageProps;
 
@@ -36,7 +37,7 @@ public class UploadFileValidator implements Validator {
             checkFileName(originalFilename, errors);
         }
         checkFileExists(originalFilename, replaceFile, errors);
-        checkFileSize(uploadFileRequest.getFile().getSize(), errors);
+        checkFileSize(uploadFileRequest, errors);
     }
 
     private void checkFileName(final String fileName, final Errors errors) {
@@ -44,11 +45,11 @@ public class UploadFileValidator implements Validator {
         if (fileNameWithoutExtension == null
                 || fileNameWithoutExtension.length() < 1
                 || fileNameWithoutExtension.length() > 64) {
-            errors.reject(FILENAME_HAS_INCORRECT_SIZE);
+            errors.reject(String.format(FILENAME_HAS_INCORRECT_SIZE, fileName));
         }
         if (fileNameWithoutExtension != null
                 && !fileNameWithoutExtension.matches("[a-zA-Z0-9_\\-]{1,64}")) {
-            errors.reject(FILENAME_CONTAINS_ILLEGAL_CHARACTERS);
+            errors.reject(String.format(FILENAME_CONTAINS_ILLEGAL_CHARACTERS, fileName));
         }
     }
 
@@ -56,15 +57,17 @@ public class UploadFileValidator implements Validator {
         final boolean fileExists = fileExists(fileName);
 
         if (fileExists && !replaceFile) {
-            errors.reject(FILE_ALREADY_EXISTS);
+            errors.reject(String.format(FILE_ALREADY_EXISTS, fileName));
         } else if (!fileExists && replaceFile) {
-            errors.reject(FILE_NOT_FOUND);
+            errors.reject(String.format(FILE_NOT_FOUND, fileName));
         }
     }
 
-    private void checkFileSize(final Long fileSize, final Errors errors) {
-        if (fileSize > fileStorageProps.getUploadMaxSize()) {
-            errors.reject(String.format(FILE_TOO_LARGE, fileStorageProps.getUploadMaxSize() / 1048576.0));
+    private void checkFileSize(final UploadFileRequest uploadFileRequest, final Errors errors) {
+        if (uploadFileRequest.getFile().getSize() > fileStorageProps.getUploadMaxSize()) {
+            errors.reject(String.format(FILE_TOO_LARGE,
+                    uploadFileRequest.getFile().getOriginalFilename(),
+                    fileStorageProps.getUploadMaxSize() / 1048576.0));
         }
     }
 

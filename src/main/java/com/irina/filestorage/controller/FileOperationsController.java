@@ -1,6 +1,10 @@
 package com.irina.filestorage.controller;
 
-import com.irina.filestorage.model.*;
+import com.irina.filestorage.model.FileSearchRequest;
+import com.irina.filestorage.model.FileSearchResponse;
+import com.irina.filestorage.model.StorageSizeResponse;
+import com.irina.filestorage.model.UploadFileRequest;
+import com.irina.filestorage.model.validator.FileOperationValidationException;
 import com.irina.filestorage.model.validator.FileSearchValidator;
 import com.irina.filestorage.model.validator.UploadFileValidator;
 import com.irina.filestorage.service.FileOperationsService;
@@ -20,7 +24,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/files")
@@ -37,12 +40,10 @@ public class FileOperationsController {
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity uploadFile(@Valid UploadFileRequest uploadFileRequest,
-                                     BindingResult result) throws IOException {
+    public ResponseEntity<Void> uploadFile(@Valid UploadFileRequest uploadFileRequest,
+                                           BindingResult result) throws IOException {
         if (result.hasErrors()) {
-            return buildErrorResponseEntity("File %s has an error: %s",
-                    uploadFileRequest.getFile().getOriginalFilename(),
-                    result);
+            throw new FileOperationValidationException(result.getAllErrors());
         }
         fileOperationsService.uploadFile(uploadFileRequest.getFile());
         if (uploadFileRequest.getReplaceFile()) {
@@ -82,9 +83,9 @@ public class FileOperationsController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity searchFiles(@RequestParam("search") final String fileNameRegex,
-                                      @RequestParam(name = "pageSize", defaultValue = "${filestorage.file.pageSize}") final Integer pageSize,
-                                      @RequestParam(name = "pageNumber", defaultValue = "1") final Integer pageNumber) throws IOException {
+    public ResponseEntity<FileSearchResponse> searchFiles(@RequestParam("search") final String fileNameRegex,
+                                                          @RequestParam(name = "pageSize", defaultValue = "${filestorage.file.pageSize}") final Integer pageSize,
+                                                          @RequestParam(name = "pageNumber", defaultValue = "1") final Integer pageNumber) throws IOException {
         final FileSearchRequest fileSearchRequest = new FileSearchRequest(fileNameRegex, pageSize, pageNumber);
 
         DataBinder dataBinder = new DataBinder(fileSearchRequest);
@@ -93,26 +94,10 @@ public class FileOperationsController {
         final BindingResult result = dataBinder.getBindingResult();
 
         if (result.hasErrors()) {
-            return buildErrorResponseEntity("Search request %s has an error: %s",
-                    fileSearchRequest.getFileNameRegex(),
-                    result);
+            throw new FileOperationValidationException(result.getAllErrors());
         } else {
             return ResponseEntity.ok(new FileSearchResponse(pageSize, pageNumber,
                     fileOperationsService.getMatchingFileNames(fileNameRegex, pageSize, pageNumber)));
         }
-    }
-
-    private ResponseEntity<ErrorResponse> buildErrorResponseEntity(final String messageTemplate,
-                                                                   final String target,
-                                                                   final BindingResult result) {
-        return ResponseEntity.badRequest().body(
-                new ErrorResponse(
-                        result.getAllErrors().stream()
-                                .map(error -> {
-                                    log.debug(String.format(messageTemplate, target, error.getCode()));
-                                    return error.getCode();
-                                })
-                                .collect(Collectors.toList())
-                ));
     }
 }
