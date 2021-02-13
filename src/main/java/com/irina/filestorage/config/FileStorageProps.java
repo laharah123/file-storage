@@ -11,4 +11,6 @@ public class FileStorageProps {
     private Long uploadMaxSize;
 
     private String basePath;
+
+    private Long pageSize;
 }

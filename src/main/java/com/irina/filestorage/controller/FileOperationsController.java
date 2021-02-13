@@ -1,8 +1,7 @@
 package com.irina.filestorage.controller;
 
-import com.irina.filestorage.model.ErrorResponse;
-import com.irina.filestorage.model.SizeResponse;
-import com.irina.filestorage.model.UploadFileRequest;
+import com.irina.filestorage.model.*;
+import com.irina.filestorage.model.validator.FileSearchValidator;
 import com.irina.filestorage.model.validator.UploadFileValidator;
 import com.irina.filestorage.service.FileOperationsService;
 import lombok.AllArgsConstructor;
@@ -12,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class FileOperationsController {
     private final UploadFileValidator uploadFileValidator;
     private final FileOperationsService fileOperationsService;
-
+    private final FileSearchValidator fileSearchValidator;
 
     @InitBinder
     protected void initCreateFileBinder(final WebDataBinder binder) {
@@ -40,7 +40,8 @@ public class FileOperationsController {
     public ResponseEntity uploadFile(@Valid UploadFileRequest uploadFileRequest,
                                      BindingResult result) throws IOException {
         if (result.hasErrors()) {
-            return buildErrorResponseEntity(uploadFileRequest.getFile().getOriginalFilename(),
+            return buildErrorResponseEntity("File %s has an error: %s",
+                    uploadFileRequest.getFile().getOriginalFilename(),
                     result);
         }
         fileOperationsService.uploadFile(uploadFileRequest.getFile());
@@ -76,17 +77,39 @@ public class FileOperationsController {
     }
 
     @GetMapping(value = "/size", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SizeResponse> getSizeOfStorage() throws IOException {
-        return ResponseEntity.ok(new SizeResponse(fileOperationsService.getSizeOfStorage()));
+    public ResponseEntity<StorageSizeResponse> getSizeOfStorage() throws IOException {
+        return ResponseEntity.ok(new StorageSizeResponse(fileOperationsService.getSizeOfStorage()));
     }
 
-    private ResponseEntity<ErrorResponse> buildErrorResponseEntity(final String fileName,
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity searchFiles(@RequestParam("search") final String fileNameRegex,
+                                      @RequestParam(name = "pageSize", defaultValue = "${filestorage.file.pageSize}") final Integer pageSize,
+                                      @RequestParam(name = "pageNumber", defaultValue = "1") final Integer pageNumber) throws IOException {
+        final FileSearchRequest fileSearchRequest = new FileSearchRequest(fileNameRegex, pageSize, pageNumber);
+
+        DataBinder dataBinder = new DataBinder(fileSearchRequest);
+        dataBinder.setValidator(fileSearchValidator);
+        dataBinder.validate();
+        final BindingResult result = dataBinder.getBindingResult();
+
+        if (result.hasErrors()) {
+            return buildErrorResponseEntity("Search request %s has an error: %s",
+                    fileSearchRequest.getFileNameRegex(),
+                    result);
+        } else {
+            return ResponseEntity.ok(new FileSearchResponse(pageSize, pageNumber,
+                    fileOperationsService.getMatchingFileNames(fileNameRegex, pageSize, pageNumber)));
+        }
+    }
+
+    private ResponseEntity<ErrorResponse> buildErrorResponseEntity(final String messageTemplate,
+                                                                   final String target,
                                                                    final BindingResult result) {
         return ResponseEntity.badRequest().body(
                 new ErrorResponse(
                         result.getAllErrors().stream()
                                 .map(error -> {
-                                    log.debug(String.format("File %s has an error: %s", fileName, error.getCode()));
+                                    log.debug(String.format(messageTemplate, target, error.getCode()));
                                     return error.getCode();
                                 })
                                 .collect(Collectors.toList())

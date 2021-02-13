@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: File operations
+  description: Describes the operations you can perform for files in the file storage
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/filestorage
+    description: Local test server
+paths:
+  /files:
+    put:
+      tags:
+        - "Files"
+      summary: Create or replace a file in the storage
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                replaceFile:
+                  type: boolean
+                  description: Indicates whether this is a file creation or a replacement
+                file:
+                  type: string
+                  format: binary
+                  description: The file to be created/replaced
+              required:
+                - file
+      responses:
+        "200":
+          description: Indicates the file was successfully replaced
+        "201":
+          description: Indicates the file was successfully created
+        "400":
+          description: Indicates a validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Indicates an unknown error occured
+    get:
+      tags:
+        - "Files"
+      summary: Search for files in the storage
+      parameters:
+        - in: query
+          name: search
+          required: true
+          schema:
+            type: string
+          description: A valid regex representing the search term
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+          description: The number of entries that should be returned
+        - in: query
+          name: pageNumber
+          schema:
+            type: integer
+          description: The page number, used together with the pageSize parameter
+      responses:
+        "200":
+          description: Indicates the file was successfully replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileSearchResponse"
+        "400":
+          description: Indicates a validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          description: Indicates an unknown error occured
+
+  /files/{fileName}:
+    get:
+      tags:
+        - "Files"
+      summary: Download the file represented by the provided fileName
+      parameters:
+        - in: path
+          name: fileName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Indicates the file was successfully downloaded
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: the value is `attachment; filename="test.txt"`
+        "404":
+          description: Indicates the file doesn't exist
+        "500":
+          description: Indicates an unknown error occured
+    delete:
+      tags:
+        - "Files"
+      summary: Delete the file represented by the provided fileName
+      parameters:
+        - in: path
+          name: fileName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Indicates the file was successfully deleted
+        "404":
+          description: Indicates the file doesn't exist
+        "500":
+          description: Indicates an unknown error occured
+
+  /files/size:
+    get:
+      tags:
+        - "Size"
+      summary: Get the number of files in the storage
+      responses:
+        "200":
+          description: Indicates the file was successfully downloaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SizeResponse"
+        "500":
+          description: Indicates an unknown error occured
+components:
+  schemas:
+    ValidationError:
+      type: object
+      properties:
+        errorMessages:
+          type: array
+          items:
+            type: string
+    SizeResponse:
+      type: object
+      properties:
+        numberOfFiles:
+          type: integer
+    FileSearchResponse:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+        pageNumber:
+          type: integer
+        fileNames:
+          type: array
+          items:
+            type: string

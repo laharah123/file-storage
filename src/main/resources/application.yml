@@ -2,6 +2,7 @@ filestorage:
     file:
         basePath: E:/programs/fileTests
         uploadMaxSize: 1048576
+        pageSize: 20
 server:
     servlet:
         context-path: /filestorage

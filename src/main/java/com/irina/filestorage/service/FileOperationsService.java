@@ -11,10 +11,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @Service
 @AllArgsConstructor
@@ -44,9 +48,24 @@ public class FileOperationsService {
     }
 
     public long getSizeOfStorage() throws IOException {
-        final Path baseDirPath = Paths.get(fileStorageProps.getBasePath());
-        try (Stream<Path> files = Files.walk(baseDirPath, 1)) {
-            return files.count() - 1;
+        final Path baseDirPath = Paths.get(fileStorageProps.getBasePath()).normalize();
+
+        try (final DirectoryStream<Path> files = Files.newDirectoryStream(baseDirPath)) {
+            return StreamSupport.stream(files.spliterator(), false).count();
+        }
+    }
+
+    public List<String> getMatchingFileNames(final String fileNameRegex, final int pageSize, final int pageNumber) throws IOException {
+        final Path baseDirPath = Paths.get(fileStorageProps.getBasePath()).normalize();
+        final PathMatcher regexFileNameMatcher = FileSystems.getDefault().getPathMatcher("regex:" + fileNameRegex);
+
+        try (final Stream<Path> filePaths = Files.walk(baseDirPath, 1)) {
+            return filePaths.filter(filePath -> regexFileNameMatcher.matches(filePath.getFileName()) && Files.isRegularFile(filePath))
+                    .skip((long) (pageNumber - 1) * pageSize)
+                    .limit(pageSize)
+                    .map(filePath -> filePath.getFileName().toString())
+                    .sorted()
+                    .collect(Collectors.toList());
         }
     }
 }
