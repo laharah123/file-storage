@@ -40,8 +40,8 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 new ErrorResponse(
                         errors.stream()
                                 .map(error -> {
-                                    log.debug(error.getCode());
-                                    return error.getCode();
+                                    log.debug(error.getDefaultMessage());
+                                    return error.getDefaultMessage();
                                 })
                                 .collect(Collectors.toList())
                 ));

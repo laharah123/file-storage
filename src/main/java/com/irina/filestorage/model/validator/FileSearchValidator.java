@@ -10,8 +10,11 @@ import java.util.regex.PatternSyntaxException;
 
 @Component
 public class FileSearchValidator implements Validator {
+    private static final String INCORRECT_PAGE_SIZE_CODE = "filestorage.files.search.incorrectPageSize";
     private static final String INCORRECT_PAGE_SIZE = "Page size %s is invalid. It must be a positive integer number";
+    private static final String INCORRECT_PAGE_NUMBER_CODE = "filestorage.files.search.incorrectPageNumber";
     private static final String INCORRECT_PAGE_NUMBER = "Page number %s is invalid. It must be a positive integer number";
+    private static final String INVALID_SEARCH_PATTERN_CODE = "filestorage.files.search.invalidSearchPattern";
     private static final String INVALID_SEARCH_PATTERN = "The search term %s is not a valid regex";
 
     @Override
@@ -28,10 +31,10 @@ public class FileSearchValidator implements Validator {
 
     private void checkPageSizeAndNumber(final Integer pageSize, final Integer pageNumber, final Errors errors) {
         if (pageSize < 1) {
-            errors.reject(String.format(INCORRECT_PAGE_SIZE, pageSize));
+            errors.reject(INCORRECT_PAGE_SIZE_CODE, String.format(INCORRECT_PAGE_SIZE, pageSize));
         }
         if (pageNumber < 1) {
-            errors.reject(String.format(INCORRECT_PAGE_NUMBER, pageNumber));
+            errors.reject(INCORRECT_PAGE_NUMBER_CODE, String.format(INCORRECT_PAGE_NUMBER, pageNumber));
         }
     }
 
@@ -39,7 +42,7 @@ public class FileSearchValidator implements Validator {
         try {
             Pattern.compile(fileNameRegex);
         } catch (PatternSyntaxException exception) {
-            errors.reject(String.format(INVALID_SEARCH_PATTERN, fileNameRegex));
+            errors.reject(INVALID_SEARCH_PATTERN_CODE, String.format(INVALID_SEARCH_PATTERN, fileNameRegex));
         }
     }
 }

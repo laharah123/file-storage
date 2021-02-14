@@ -1,7 +1,10 @@
 filestorage:
     file:
+        #the parent path of the file storage directory
         basePath: E:/programs/fileTests
+        #the maximum size of the files uploaded, expressed in bytes
         uploadMaxSize: 1048576
+        #how many entries should the search API bring in one call
         pageSize: 20
 server:
     servlet:
