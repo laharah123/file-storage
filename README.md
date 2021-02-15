@@ -1,4 +1,4 @@
-This project represents a simple file storage system implementation
+This project represents a simple file storage system implementation with Spring Boot.
 
 There are 5 REST APIs supported (see [here][files.yaml]):
 - 3 for CRUD operations on the files (create, read, update, delete)
